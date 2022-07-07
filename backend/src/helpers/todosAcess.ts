@@ -1,9 +1,10 @@
 import * as AWS from 'aws-sdk'
-import * as AWSXRay from 'aws-xray-sdk'
+// import * as AWSXRay from 'aws-xray-sdk'
 import { DocumentClient } from 'aws-sdk/clients/dynamodb'
 import { createLogger } from '../utils/logger'
 import { TodoItem } from '../models/TodoItem'
 import { TodoUpdate } from '../models/TodoUpdate'
+const AWSXRay = require('aws-xray-sdk')
 
 const XAWS = AWSXRay.captureAWS(AWS)
 
@@ -29,14 +30,14 @@ export class TodosAccess {
     return items as TodoItem[]
   }
 
-  async getTodo(id: string): Promise<TodoItem> {
-    console.log('Getting todo' + id)
+  async getTodo(todoId: string): Promise<TodoItem> {
+    console.log('Getting todo: ' + todoId)
 
     const result = await this.docClient
       .get({
         TableName: this.todosTable,
         Key: {
-          HashKey: id
+          todoId: todoId
         }
       })
       .promise()
@@ -90,11 +91,17 @@ export class TodosAccess {
   }
 
   // TODO: udpate me later
-  async deleteToDo(todoId: string): Promise<boolean> {
+  async deleteToDo(todo: TodoItem): Promise<boolean> {
     await this.docClient
       .delete({
         TableName: this.todosTable,
-        Key: { todoId: todoId }
+        Key: { 
+          todoId: todo.todoId
+        }
+      },
+      function (err, data) {
+        if (err) console.log(err)
+        else console.log("delete", data)
       })
       .promise()
 
@@ -104,6 +111,7 @@ export class TodosAccess {
 
 function createDynamoDBClient() {
   if (process.env.IS_OFFLINE) {
+    AWSXRay.setContextMissingStrategy("LOG_ERROR");
     console.log('Creating a local DynamoDB instance')
     return new XAWS.DynamoDB.DocumentClient({
       region: 'localhost',

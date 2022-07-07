@@ -16,16 +16,23 @@ export async function createTodo(
 ): Promise<TodoItem> {
   const todoId = uuid.v4()
   const url = getUploadUrl(todoId)
+  console.log('url', url);
 
-  return await todoAccess.createTodo({
+
+  const bucketName = process.env.ATTACHMENT_S3_BUCKET
+  const todo = {
     todoId: todoId,
     userId: userId,
     name: todoItem.name,
     dueDate: todoItem.dueDate,
     createdAt: new Date().toISOString(),
     done: false,
-    attachmentUrl: url
-  })
+    attachmentUrl: `https://${bucketName}.s3.amazonaws.com/${todoId}`
+  }
+  console.log(todo);
+  let todoRst: TodoItem = await todoAccess.createTodo(todo)
+  todoRst = {...todoRst, ...{uploadUrl: url}}
+  return todoRst
 }
 
 // TODO: Fixme
@@ -43,11 +50,15 @@ export async function updateTodo(
   )
 }
 
-export async function deleteTodo(todoId: string): Promise<boolean> {
-  return await todoAccess.deleteToDo(todoId)
+export async function deleteTodo(todo: TodoItem): Promise<boolean> {
+  return await todoAccess.deleteToDo(todo)
 }
 
 
 export async function getAllToDo(): Promise<TodoItem[]> {
     return await todoAccess.getAllTodos()
+}
+
+export async function getTodo(todoId: string):  Promise<TodoItem> {
+  return await todoAccess.getTodo(todoId);
 }

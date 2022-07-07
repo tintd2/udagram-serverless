@@ -32,7 +32,9 @@ jUckBZBG0GDeGmiCHZlJaDEXNFE2C4xzoI8yvJCI2rJCrZ2XdcJnOU6yBo8VjTBZ
 GJqd+Sut+LkAr0Ppem77Ec/qSv2inIOaeqG/nC+L4WGRq5g7vLnlnBZdYAfFOaqg
 0ak7f/VS4qnU22CrToH0XDb9kh21u8EgDH+57jy5/SCit5sTzekL0qsXpSLNGhrL
 OvbglBlEnSZPhxk+a91OTSA=
------END CERTIFICATE-----`
+-----END CERTIFICATE-----`;
+
+// const auth0Secret = process.env.AUTH_0_SECRET;
 
 export const handler = async (
   event: CustomAuthorizerEvent
@@ -82,6 +84,7 @@ async function verifyToken(authHeader: string): Promise<JwtPayload> {
   // You should implement it similarly to how it was implemented for the exercise for the lesson 5
   // You can read more about how to do this here: https://auth0.com/blog/navigating-rs256-and-jwks/
   return verify(token, cert, { algorithms: ['RS256'] }) as JwtPayload
+  // return verify(token, auth0Secret) as JwtPayload;
 }
 
 function getToken(authHeader: string): string {
