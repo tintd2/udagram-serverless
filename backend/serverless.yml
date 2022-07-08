@@ -35,7 +35,7 @@ provider:
     # TODOS_CREATED_AT_INDEX: CreatedAtIndex
     USER_ID_INDEX: UserIdIndex
     ATTACHMENT_S3_BUCKET: serverless-c4-todo-images-${self:provider.stage}
-    SIGNED_URL_EXPIRATION: 300
+    SIGNED_URL_EXPIRATION: 3000
     AUTH_0_SECRET: zi8nKAzPGIieHokf8-3PMvcQOj9uoVgfGhKfKw9NNzhrRkjzhB7XeEVygLsKTEYJ
     # AWS_ACCESS_KEY_ID: AKIAS3FXW4GLAH63TV5U
     # AWS_SECRET_ACCESS_KEY: 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
@@ -72,9 +72,10 @@ custom:
           title: "My API" # this will be ignored due to an issue in API Gateway doc export
           description: "Sample Benchmarks API"
       models:
-      - name: CreateTodo
-        contentType: application/json
-        schema: ${file(models/create-todo-model.json)}
+        - name: CreateTodoRequest
+          contentType: application/json
+          schema: ${file(models/create-todo-model.json)}
+
   serverless-offline:
     port: 3003
 
@@ -128,13 +129,13 @@ functions:
           method: post
           path: todos
           cors: true
-          # authorizer: Auth
+          authorizer: Auth
           reqValidatorName: RequestBodyValidator
           documentation:
             summary: Create a new todo
             description: create a new todo
             requestModels:
-              'application/json': CreateTodo
+              'application/json': CreateTodoRequest
           # request:
           #   schemas:
           #     application/json: ${file(models/create-todo-model.json)}
@@ -183,24 +184,24 @@ functions:
 
   # # TODO: Configure this function
   # # Provide property for setting up CORS, Authorizer, iamRoleStatements
-  # GenerateUploadUrl:
-  #   handler: src/lambda/http/generateUploadUrl.handler
-  #   events:
-  #     - http:
-  #         method: post
-  #         path: todos/{todoId}/attachment
-  #         cors: true
-  #         authorizer: Auth
-  #   iamRoleStatements:
-  #     - Effect: Allow
-  #       Action:
-  #         - dynamodb:PutItem
-  #       Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODOS_TABLE}
-  #     - Effect: Allow
-  #       Action:
-  #       - s3:PutObject
-  #       - s3:GetObject
-  #       Resource: !GetAtt AttachmentsBucket.Arn
+  GenerateUploadUrl:
+    handler: src/lambda/http/generateUploadUrl.handler
+    events:
+      - http:
+          method: post
+          path: todos/{todoId}/attachment
+          cors: true
+          authorizer: Auth
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - dynamodb:PutItem
+        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODOS_TABLE}
+      - Effect: Allow
+        Action:
+        - s3:PutObject
+        - s3:GetObject
+        Resource: !GetAtt AttachmentsBucket.Arn
 
 resources:
   Resources:

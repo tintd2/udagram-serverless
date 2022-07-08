@@ -1,5 +1,5 @@
 import { TodosAccess } from './todosAcess'
-import { getUploadUrl } from './attachmentUtils'
+// import { getUploadUrl } from './attachmentUtils'
 import { TodoItem } from '../models/TodoItem'
 import { CreateTodoRequest } from '../requests/CreateTodoRequest'
 import { UpdateTodoRequest } from '../requests/UpdateTodoRequest'
@@ -7,6 +7,7 @@ import { createLogger } from '../utils/logger'
 import * as uuid from 'uuid'
 // import * as createError from 'http-errors'
 import { TodoUpdate } from '../models/TodoUpdate'
+import { getSignedUrlPromise } from './attachmentUtils'
 createLogger
 const todoAccess = new TodosAccess()
 // TODO: Implement businessLogic
@@ -15,8 +16,9 @@ export async function createTodo(
   userId: string
 ): Promise<TodoItem> {
   const todoId = uuid.v4()
-  const url = getUploadUrl(todoId)
-  console.log('url', url);
+  // const url = getUploadUrl(todoId)
+  // const url = 'getUploadUrl(todoId)'
+  // console.log('url', url);
 
 
   const bucketName = process.env.ATTACHMENT_S3_BUCKET
@@ -29,10 +31,14 @@ export async function createTodo(
     done: false,
     attachmentUrl: `https://${bucketName}.s3.amazonaws.com/${todoId}`
   }
-  console.log(todo);
+  // console.log(todo);
   let todoRst: TodoItem = await todoAccess.createTodo(todo)
-  todoRst = {...todoRst, ...{uploadUrl: url}}
+  // todoRst = {...todoRst, ...{uploadUrl: url}}
   return todoRst
+}
+
+export async function getUrl(todoId:string): Promise<string> {
+  return await getSignedUrlPromise(todoId);
 }
 
 // TODO: Fixme
