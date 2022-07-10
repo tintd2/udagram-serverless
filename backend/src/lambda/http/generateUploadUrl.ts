@@ -17,6 +17,7 @@ export const handler = middy(
     // TODO: Return a presigned URL to upload a file for a TODO item with the provided id
     console.log('todoId', todoId)
     const url = await getUrl(todoId);
+    // const url = getUploadUrl(todoId);
     console.log('url', url);
     const userId = getUserId(event);
     return {
