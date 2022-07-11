@@ -1,23 +1,30 @@
 import * as AWS from 'aws-sdk'
-// import * as AWSXRay from 'aws-xray-sdk'
+import * as AWSXRay from 'aws-xray-sdk'
+// import AWSXRay from "aws-xray-sdk-core"
 import { DocumentClient } from 'aws-sdk/clients/dynamodb'
 import { createLogger } from '../utils/logger'
 import { TodoItem } from '../models/TodoItem'
 import { TodoUpdate } from '../models/TodoUpdate'
-const AWSXRay = require('aws-xray-sdk')
+import { SecretsManager } from 'aws-sdk'
+// const AWSXRay = require('aws-xray-sdk')
 
+AWSXRay.config([AWSXRay.plugins.EC2Plugin,AWSXRay.plugins.ElasticBeanstalkPlugin]);
 const XAWS = AWSXRay.captureAWS(AWS)
-
+// var AWSXRay = require('aws-xray-sdk');
 const logger = createLogger('TodosAccess')
-logger
+
+let catchedSecret: string;
+
 // TODO: Implement the dataLayer logic
 export class TodosAccess {
   constructor(
     private readonly docClient: DocumentClient = createDynamoDBClient(),
-    private readonly todosTable = process.env.TODOS_TABLE
+    private readonly todosTable = process.env.TODOS_TABLE,
+    private readonly secretClient: SecretsManager = createSecretClient()
   ) {}
 
   async getAllTodos(): Promise<TodoItem[]> {
+    logger.info('getAllTodos');
     console.log('Getting all todos')
 
     const result = await this.docClient
@@ -107,6 +114,24 @@ export class TodosAccess {
 
     return true
   }
+
+  // getSecret(key: string): string | PromiseLike<string> {
+  //   throw new Error('Method not implemented.')
+  // }
+
+  async getSecret(secretId: string): Promise<string> {
+    if (catchedSecret) return catchedSecret
+    const data = await this.secretClient
+      .getSecretValue({
+        SecretId: secretId
+      })
+      .promise()
+
+    catchedSecret = data.SecretString
+
+    return JSON.parse(catchedSecret)
+  }
+
 }
 
 function createDynamoDBClient() {
@@ -120,4 +145,8 @@ function createDynamoDBClient() {
   }
 
   return new XAWS.DynamoDB.DocumentClient()
+}
+
+function createSecretClient() {
+  return new XAWS.SecretsManager({region: "us-east-1"});
 }

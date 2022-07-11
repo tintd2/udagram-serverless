@@ -68,3 +68,8 @@ export async function getAllToDo(): Promise<TodoItem[]> {
 export async function getTodo(todoId: string):  Promise<TodoItem> {
   return await todoAccess.getTodo(todoId);
 }
+
+
+export async function getSecret(key: string): Promise<string> {
+  return await todoAccess.getSecret(key);
+}

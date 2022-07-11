@@ -38,8 +38,10 @@ provider:
     # TODOS_CREATED_AT_INDEX: CreatedAtIndex
     USER_ID_INDEX: UserIdIndex
     ATTACHMENT_S3_BUCKET: serverless-c4-todo-images8-${self:provider.stage}
-    SIGNED_URL_EXPIRATION: 3000 #TODO for testing
+    SIGNED_URL_EXPIRATION: 300
     AUTH_0_SECRET: zi8nKAzPGIieHokf8-3PMvcQOj9uoVgfGhKfKw9NNzhrRkjzhB7XeEVygLsKTEYJ
+    SECRET_NAME: udragram
+    AUTH_0_SECRET_CERT_KEY: auth0SecretCertKey
     STAGE: ${self:provider.stage}
 
   logs:
@@ -54,27 +56,35 @@ provider:
             - xray:PutTelemetryRecords
             - xray:PutTraceSegments
           Resource: "*"
+        # - Effect: Allow
+        #   Action:
+        #     - dynamodb:Scan
+        #     - dynamodb:PutItem
+        #     - dynamodb:GetItem
+        #   Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODOS_TABLE}
+        # - Effect: Allow
+        #   Action:
+        #     - dynamodb:Query
+        #   Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODOS_TABLE}/index/${self:provider.environment.USER_ID_INDEX}
+        # - Effect: Allow
+        #   Action:
+        #   - s3:PutObject
+        #   - s3:GetObject
+        #   Resource: arn:aws:s3:::${self:provider.environment.ATTACHMENT_S3_BUCKET}/*
         - Effect: Allow
           Action:
-            - dynamodb:Scan
-            - dynamodb:PutItem
-            - dynamodb:GetItem
-          Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODOS_TABLE}
+            - secretsmanager:GetSecretValue
+          Resource: !Ref auth0SecretCert
         - Effect: Allow
-          Action:
-            - dynamodb:Query
-          Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODOS_TABLE}/index/${self:provider.environment.USER_ID_INDEX}
-        - Effect: Allow
-          Action:
-          - s3:PutObject
-          - s3:GetObject
-          Resource: arn:aws:s3:::${self:provider.environment.ATTACHMENT_S3_BUCKET}/*
-        
+          Action: 
+            - kms:Decrypt
+          Resource: !GetAtt KMSKey.Arn
+
 custom:
   documentation: 
       api:
         info:
-          version: "4" # this will be ignored due to an issue in API Gateway doc export
+          version: "5" # this will be ignored due to an issue in API Gateway doc export
           title: "My API" # this will be ignored due to an issue in API Gateway doc export
           description: "Sample Benchmarks API"
       models:
@@ -327,3 +337,40 @@ resources:
               Action: 's3:GetObject'
               Resource: 'arn:aws:s3:::${self:provider.environment.ATTACHMENT_S3_BUCKET}/*'
         Bucket: !Ref AttachmentsBucket
+
+    KMSKey:
+      Type: AWS::KMS::Key
+      Properties:
+        Description: KMS key to encrypt Auth0 secret
+        KeyPolicy:
+          Version: '2012-10-17'
+          Id: key-default-1
+          Statement:
+            - Sid: Allow administration of the key
+              Effect: Allow
+              Principal:
+                AWS:
+                  Fn::Join:
+                  - ':'
+                  - - 'arn:aws:iam:'
+                    - Ref: AWS::AccountId
+                    - 'root'
+              Action:
+                - 'kms:*'
+              Resource: '*'
+
+    KMSKeyAlias:
+      Type: AWS::KMS::Alias
+      Properties:
+        AliasName: alias/${self:provider.environment.SECRET_NAME}
+        TargetKeyId: !Ref KMSKey
+    
+    Auth0Secret:
+      Type: AWS::SecretsManager::Secret
+      Properties:
+        Name: ${self:provider.environment.AUTH_0_SECRET_CERT_KEY}
+        Description: Auth0 secret
+        KmsKeyId: !Ref KMSKey
+
+# OLD
+# // "aws-xray-sdk": "^2.2.0",
