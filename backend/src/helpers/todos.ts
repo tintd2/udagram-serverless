@@ -70,6 +70,6 @@ export async function getTodo(todoId: string):  Promise<TodoItem> {
 }
 
 
-export async function getSecret(key: string): Promise<string> {
-  return await todoAccess.getSecret(key);
-}
+// export async function getSecret(key: string): Promise<string> {
+//   return await todoAccess.getSecret(key);
+// }

@@ -6,6 +6,7 @@ import { createLogger } from '../utils/logger'
 import { TodoItem } from '../models/TodoItem'
 import { TodoUpdate } from '../models/TodoUpdate'
 import { SecretsManager } from 'aws-sdk'
+// import { SecretsManager } from 'aws-sdk'
 // const AWSXRay = require('aws-xray-sdk')
 
 AWSXRay.config([AWSXRay.plugins.EC2Plugin,AWSXRay.plugins.ElasticBeanstalkPlugin]);
@@ -148,5 +149,15 @@ function createDynamoDBClient() {
 }
 
 function createSecretClient() {
+  // let secretManager = new XAWS.SecretsManager({ region: 'us-east-1' });
+  // const data = await secretManager.getSecretValue({ SecretId: secretId }).promise();
+  // const secret = JSON.parse(data.SecretString);
+  // console.log(secret);
+  // console.log(`data is: ${JSON.stringify(data.SecretString)}`);
+  // accessKey = secret[s3AccessKey];
+  // secretKey = secret[s3SecretKey];
+  // console.log(accessKey);
+  // console.log(secretKey);
+  // s3 = createS3Client();
   return new XAWS.SecretsManager({region: "us-east-1"});
 }

@@ -27,9 +27,9 @@ const secretId =  process.env.SECRET_NAME;
 const secretKey =  process.env.AUTH_0_SECRET_CERT_KEY;
 
 export const handler = middy(async (event: CustomAuthorizerEvent, context): Promise<CustomAuthorizerResult> => {
-  console.log('event', event)
-  console.log('context', context)
-  logger.info('Authorizing a user', event.authorizationToken)
+  // console.log('event', event)
+  // console.log('context', context)
+  // logger.info('Authorizing a user', event.authorizationToken)
   let tmpCert = context.AUTH0_SECRET[secretKey];
   // console.log()
   cert = Buffer.from(tmpCert, 'base64').toString('utf-8')

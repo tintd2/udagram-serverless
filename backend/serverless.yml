@@ -42,6 +42,8 @@ provider:
     AUTH_0_SECRET: zi8nKAzPGIieHokf8-3PMvcQOj9uoVgfGhKfKw9NNzhrRkjzhB7XeEVygLsKTEYJ
     SECRET_NAME: udragram-secret
     AUTH_0_SECRET_CERT_KEY: auth0SecretCertKey
+    S3_ACCESS_KEY: s3AccessKey
+    S3_SECRET_KEY: s3SecretKey
     STAGE: ${self:provider.stage}
 
   logs:
@@ -241,6 +243,14 @@ functions:
         - s3:PutObject
         - s3:GetObject
         Resource: !GetAtt AttachmentsBucket.Arn
+      - Effect: Allow
+        Action:
+          - secretsmanager:GetSecretValue
+        Resource: !Ref Auth0Secret
+      - Effect: Allow
+        Action: 
+          - kms:Decrypt
+        Resource: !GetAtt KMSKey.Arn
 
 resources:
   Resources:
