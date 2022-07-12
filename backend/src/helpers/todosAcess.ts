@@ -9,28 +9,35 @@ import { SecretsManager } from 'aws-sdk'
 // import { SecretsManager } from 'aws-sdk'
 // const AWSXRay = require('aws-xray-sdk')
 
-AWSXRay.config([AWSXRay.plugins.EC2Plugin,AWSXRay.plugins.ElasticBeanstalkPlugin]);
+AWSXRay.config([
+  AWSXRay.plugins.EC2Plugin,
+  AWSXRay.plugins.ElasticBeanstalkPlugin
+])
 const XAWS = AWSXRay.captureAWS(AWS)
 // var AWSXRay = require('aws-xray-sdk');
 const logger = createLogger('TodosAccess')
 
-let catchedSecret: string;
+let catchedSecret: string
 
 // TODO: Implement the dataLayer logic
 export class TodosAccess {
   constructor(
     private readonly docClient: DocumentClient = createDynamoDBClient(),
     private readonly todosTable = process.env.TODOS_TABLE,
-    private readonly secretClient: SecretsManager = createSecretClient()
+    private readonly userIdIndex = process.env.USER_ID_INDEX,
+    private secretClient: SecretsManager = createSecretClient()
   ) {}
 
-  async getAllTodos(): Promise<TodoItem[]> {
-    logger.info('getAllTodos');
-    console.log('Getting all todos')
-
+  async getAllTodos(userId: string): Promise<TodoItem[]> {
+    logger.info(userId);
     const result = await this.docClient
-      .scan({
-        TableName: this.todosTable
+      .query({
+        IndexName: this.userIdIndex,
+        KeyConditionExpression: 'userId = :userId',
+        TableName: this.todosTable,
+        ExpressionAttributeValues: {
+          ':userId': userId
+        }
       })
       .promise()
 
@@ -101,16 +108,18 @@ export class TodosAccess {
   // TODO: udpate me later
   async deleteToDo(todo: TodoItem): Promise<boolean> {
     await this.docClient
-      .delete({
-        TableName: this.todosTable,
-        Key: { 
-          todoId: todo.todoId
+      .delete(
+        {
+          TableName: this.todosTable,
+          Key: {
+            todoId: todo.todoId
+          }
+        },
+        function (err, data) {
+          if (err) console.log(err)
+          else console.log('delete', data)
         }
-      },
-      function (err, data) {
-        if (err) console.log(err)
-        else console.log("delete", data)
-      })
+      )
       .promise()
 
     return true
@@ -132,12 +141,11 @@ export class TodosAccess {
 
     return JSON.parse(catchedSecret)
   }
-
 }
 
 function createDynamoDBClient() {
   if (process.env.IS_OFFLINE) {
-    AWSXRay.setContextMissingStrategy("LOG_ERROR");
+    AWSXRay.setContextMissingStrategy('LOG_ERROR')
     console.log('Creating a local DynamoDB instance')
     return new XAWS.DynamoDB.DocumentClient({
       region: 'localhost',
@@ -159,5 +167,5 @@ function createSecretClient() {
   // console.log(accessKey);
   // console.log(secretKey);
   // s3 = createS3Client();
-  return new XAWS.SecretsManager({region: "us-east-1"});
+  return new XAWS.SecretsManager({ region: 'us-east-1' })
 }

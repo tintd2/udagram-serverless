@@ -20,7 +20,6 @@ export async function createTodo(
   // const url = 'getUploadUrl(todoId)'
   // console.log('url', url);
 
-
   const bucketName = process.env.ATTACHMENT_S3_BUCKET
   const todo = {
     todoId: todoId,
@@ -37,8 +36,8 @@ export async function createTodo(
   return todoRst
 }
 
-export async function getUrl(todoId:string): Promise<string> {
-  return await getSignedUrlPromise(todoId);
+export async function getUrl(todoId: string): Promise<string> {
+  return await getSignedUrlPromise(todoId)
 }
 
 // TODO: Fixme
@@ -60,15 +59,13 @@ export async function deleteTodo(todo: TodoItem): Promise<boolean> {
   return await todoAccess.deleteToDo(todo)
 }
 
-
-export async function getAllToDo(): Promise<TodoItem[]> {
-    return await todoAccess.getAllTodos()
+export async function getAllToDo(userId: string): Promise<TodoItem[]> {
+  return await todoAccess.getAllTodos(userId)
 }
 
-export async function getTodo(todoId: string):  Promise<TodoItem> {
-  return await todoAccess.getTodo(todoId);
+export async function getTodo(todoId: string): Promise<TodoItem> {
+  return await todoAccess.getTodo(todoId)
 }
-
 
 // export async function getSecret(key: string): Promise<string> {
 //   return await todoAccess.getSecret(key);
