@@ -31,7 +31,7 @@ export const handler = middy(async (event: CustomAuthorizerEvent, context): Prom
   console.log('context', context)
   logger.info('Authorizing a user', event.authorizationToken)
   let tmpCert = context.AUTH0_SECRET[secretKey];
-
+  // console.log()
   cert = Buffer.from(tmpCert, 'base64').toString('utf-8')
 
   try {

@@ -40,7 +40,7 @@ provider:
     ATTACHMENT_S3_BUCKET: serverless-c4-todo-images8-${self:provider.stage}
     SIGNED_URL_EXPIRATION: 300
     AUTH_0_SECRET: zi8nKAzPGIieHokf8-3PMvcQOj9uoVgfGhKfKw9NNzhrRkjzhB7XeEVygLsKTEYJ
-    SECRET_NAME: udragram
+    SECRET_NAME: udragram-secret
     AUTH_0_SECRET_CERT_KEY: auth0SecretCertKey
     STAGE: ${self:provider.stage}
 
@@ -74,7 +74,7 @@ provider:
         - Effect: Allow
           Action:
             - secretsmanager:GetSecretValue
-          Resource: !Ref auth0SecretCert
+          Resource: !Ref Auth0Secret
         - Effect: Allow
           Action: 
             - kms:Decrypt
@@ -117,6 +117,15 @@ custom:
 functions:
   Auth:
     handler: src/lambda/auth/auth0Authorizer.handler
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - secretsmanager:GetSecretValue
+        Resource: !Ref Auth0Secret
+      - Effect: Allow
+        Action: 
+          - kms:Decrypt
+        Resource: !GetAtt KMSKey.Arn
 
   # TODO: Configure this function - DONE
   # Provide iamRoleStatements property for performing Actions on DynamoDB
@@ -368,7 +377,7 @@ resources:
     Auth0Secret:
       Type: AWS::SecretsManager::Secret
       Properties:
-        Name: ${self:provider.environment.AUTH_0_SECRET_CERT_KEY}
+        Name: ${self:provider.environment.SECRET_NAME}
         Description: Auth0 secret
         KmsKeyId: !Ref KMSKey
 
