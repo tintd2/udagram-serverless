@@ -24,7 +24,6 @@ export class TodosAccess {
   constructor(
     private readonly docClient: DocumentClient = createDynamoDBClient(),
     private readonly todosTable = process.env.TODOS_TABLE,
-    // private readonly userIdIndex = process.env.USER_ID_INDEX,
     private readonly createdAtIndex = process.env.TODOS_CREATED_AT_INDEX,
     private secretClient: SecretsManager = createSecretClient()
   ) {}
@@ -90,7 +89,6 @@ export class TodosAccess {
       .update(
         {
           TableName: this.todosTable,
-          // Item: todo
           Key: {
             todoId: todoId,
             userId: userId
@@ -135,10 +133,6 @@ export class TodosAccess {
 
     return true
   }
-
-  // getSecret(key: string): string | PromiseLike<string> {
-  //   throw new Error('Method not implemented.')
-  // }
 
   async getSecret(secretId: string): Promise<string> {
     if (catchedSecret) return catchedSecret

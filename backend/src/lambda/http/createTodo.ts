@@ -6,7 +6,8 @@ import { CreateTodoRequest } from '../../requests/CreateTodoRequest'
 // import { getUserId } from '../utils';
 // import { createTodo } from '../../businessLogic/todos'
 import { getUserId } from '../utils'
-import { createTodo } from '../../helpers/todos'
+import { createTodo } from '../../businessLogic/todos'
+// import { createTodo } from '../../helpers/todos'
 
 export const handler = middy(
   async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
@@ -14,7 +15,7 @@ export const handler = middy(
     // // TODO: Implement creating a new TODO item
     const userId = getUserId(event)
 
-    const item = await createTodo(newTodo, userId)
+    const item = await createTodo(newTodo, userId) 
 
     return {
       statusCode: 201,
