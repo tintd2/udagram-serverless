@@ -43,7 +43,8 @@ export async function getUrl(todoId: string): Promise<string> {
 // TODO: Fixme
 export async function updateTodo(
   todoItem: UpdateTodoRequest,
-  todoId: String
+  todoId: String,
+  userId: String
 ): Promise<TodoUpdate> {
   return await todoAccess.updateTodo(
     {
@@ -51,7 +52,8 @@ export async function updateTodo(
       dueDate: todoItem.dueDate,
       done: todoItem.done
     },
-    todoId
+    todoId,
+    userId
   )
 }
 
@@ -63,8 +65,11 @@ export async function getAllToDo(userId: string): Promise<TodoItem[]> {
   return await todoAccess.getAllTodos(userId)
 }
 
-export async function getTodo(todoId: string): Promise<TodoItem> {
-  return await todoAccess.getTodo(todoId)
+export async function getTodo(
+  todoId: string,
+  userId: string
+): Promise<TodoItem> {
+  return await todoAccess.getTodo(todoId, userId)
 }
 
 // export async function getSecret(key: string): Promise<string> {

@@ -24,7 +24,8 @@ export class TodosAccess {
   constructor(
     private readonly docClient: DocumentClient = createDynamoDBClient(),
     private readonly todosTable = process.env.TODOS_TABLE,
-    private readonly userIdIndex = process.env.USER_ID_INDEX,
+    // private readonly userIdIndex = process.env.USER_ID_INDEX,
+    private readonly createdAtIndex = process.env.TODOS_CREATED_AT_INDEX,
     private secretClient: SecretsManager = createSecretClient()
   ) {}
 
@@ -32,9 +33,10 @@ export class TodosAccess {
     logger.info(userId)
     const result = await this.docClient
       .query({
-        IndexName: this.userIdIndex,
+        IndexName: this.createdAtIndex,
         KeyConditionExpression: 'userId = :userId',
         TableName: this.todosTable,
+        ScanIndexForward: false,
         ExpressionAttributeValues: {
           ':userId': userId
         }
@@ -45,18 +47,19 @@ export class TodosAccess {
     return items as TodoItem[]
   }
 
-  async getTodo(todoId: string): Promise<TodoItem> {
+  async getTodo(todoId: string, userId: string): Promise<TodoItem> {
     console.log('Getting todo: ' + todoId)
+    console.log('Getting todo: ' + userId)
 
     const result = await this.docClient
       .get({
         TableName: this.todosTable,
         Key: {
-          todoId: todoId
+          todoId: todoId,
+          userId: userId
         }
       })
       .promise()
-
     const items = result.Item
     return items as TodoItem
   }
@@ -78,14 +81,19 @@ export class TodosAccess {
     return todo
   }
 
-  async updateTodo(todo: TodoUpdate, totoId: String): Promise<TodoUpdate> {
+  async updateTodo(
+    todo: TodoUpdate,
+    todoId: String,
+    userId: String
+  ): Promise<TodoUpdate> {
     await this.docClient
       .update(
         {
           TableName: this.todosTable,
           // Item: todo
           Key: {
-            todoId: totoId
+            todoId: todoId,
+            userId: userId
           },
           UpdateExpression: `set #nm = :name, dueDate = :dueDate, done = :done`,
           ExpressionAttributeValues: {
@@ -93,8 +101,8 @@ export class TodosAccess {
             ':dueDate': todo.dueDate,
             ':done': todo.done
           },
-          ExpressionAttributeNames:{
-            "#nm": "name"
+          ExpressionAttributeNames: {
+            '#nm': 'name'
           }
         },
         function (err, data) {
@@ -114,7 +122,8 @@ export class TodosAccess {
         {
           TableName: this.todosTable,
           Key: {
-            todoId: todo.todoId
+            todoId: todo.todoId,
+            userId: todo.userId
           }
         },
         function (err, data) {

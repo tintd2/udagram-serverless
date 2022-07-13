@@ -3,7 +3,6 @@
 # sls dynamodb start
 # dynamodb-admin
 # sls offline
-# us-west-2
 # npm remove serverless -g
 # npm install serverless@1.74.1 -g
 # org: udagram
@@ -34,9 +33,10 @@ provider:
   # Use these variables in the functions and resouorces section below. For example, 
   # ${self:provider.environment.ATTACHMENT_S3_BUCKET} - DONE
   environment:
-    TODOS_TABLE: Todos3-${self:provider.stage}
-    # TODOS_CREATED_AT_INDEX: CreatedAtIndex
+    TODOS_TABLE: Todos4-${self:provider.stage}
+    TODOS_CREATED_AT_INDEX: CreatedAtIndex
     USER_ID_INDEX: UserIdIndex
+    # TODO_ID_INDEX: TodoIdIndex
     ATTACHMENT_S3_BUCKET: serverless-c4-todo-images8-${self:provider.stage}
     SIGNED_URL_EXPIRATION: 300
     AUTH_0_SECRET: zi8nKAzPGIieHokf8-3PMvcQOj9uoVgfGhKfKw9NNzhrRkjzhB7XeEVygLsKTEYJ
@@ -150,7 +150,7 @@ functions:
       - Effect: Allow
         Action:
           - dynamodb:Query
-        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODOS_TABLE}/index/${self:provider.environment.USER_ID_INDEX}
+        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODOS_TABLE}/index/${self:provider.environment.TODOS_CREATED_AT_INDEX}
 
   # # TODO: Configure this function - DONE
   # # Provide iamRoleStatements property. Decide the Actions and AWS Resource. 
@@ -280,30 +280,6 @@ resources:
         ValidateRequestParameters: false
 
     # TODO: Create a DynamoDB table with local secondary index and a composite key - DONE
-    TodosTable:
-      Type: AWS::DynamoDB::Table
-      Properties:
-        AttributeDefinitions:
-          - AttributeName: userId
-            AttributeType: S
-          - AttributeName: todoId
-            AttributeType: S
-          # - AttributeName: createdAt
-          #   AttributeType: S
-        KeySchema:
-          - AttributeName: todoId
-            KeyType: HASH
-          # - AttributeName: createdAt
-          #   KeyType: RANGE
-        GlobalSecondaryIndexes:
-          - IndexName: ${self:provider.environment.USER_ID_INDEX}
-            KeySchema:
-            - AttributeName: userId
-              KeyType: HASH
-            Projection:
-              ProjectionType: ALL
-        BillingMode: PAY_PER_REQUEST
-        TableName: ${self:provider.environment.TODOS_TABLE}
     # TodosTable:
     #   Type: AWS::DynamoDB::Table
     #   Properties:
@@ -315,12 +291,49 @@ resources:
     #       - AttributeName: createdAt
     #         AttributeType: S
     #     KeySchema:
-    #       - AttributeName: userId
-    #         KeyType: HASH
     #       - AttributeName: todoId
+    #         KeyType: HASH
+    #       - AttributeName: createdAt
     #         KeyType: RANGE
+    #     GlobalSecondaryIndexes:
+    #       - IndexName: ${self:provider.environment.USER_ID_INDEX}
+    #         KeySchema:
+    #         - AttributeName: userId
+    #           KeyType: HASH
+    #         Projection:
+    #           ProjectionType: ALL
     #     BillingMode: PAY_PER_REQUEST
     #     TableName: ${self:provider.environment.TODOS_TABLE}
+    
+
+    # Here "TodosTable" is the name for cross-referencing  in the serverless.yml file
+    # It's not the name of the actual DynamoDB table. 
+    TodosTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: userId
+            AttributeType: S
+          - AttributeName: todoId
+            AttributeType: S
+          - AttributeName: createdAt
+            AttributeType: S
+        KeySchema:
+          - AttributeName: userId
+            KeyType: HASH
+          - AttributeName: todoId
+            KeyType: RANGE
+        BillingMode: PAY_PER_REQUEST
+        TableName: ${self:provider.environment.TODOS_TABLE}
+        LocalSecondaryIndexes:
+          - IndexName: ${self:provider.environment.TODOS_CREATED_AT_INDEX}
+            KeySchema:
+              - AttributeName: userId
+                KeyType: HASH
+              - AttributeName: createdAt
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL # What attributes will be copied to an index
 
     # TODO: Complete the bucket properties below. - DONE
     # Do not forget to add the CorsConfiguration propoerty
