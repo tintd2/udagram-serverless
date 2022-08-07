@@ -33,10 +33,8 @@ provider:
   # Use these variables in the functions and resouorces section below. For example, 
   # ${self:provider.environment.ATTACHMENT_S3_BUCKET} - DONE
   environment:
-    TODOS_TABLE: Todos5-${self:provider.stage}
+    TODOS_TABLE: Todos4-${self:provider.stage}
     TODOS_CREATED_AT_INDEX: CreatedAtIndex
-    VIDEOS_TABLE: Todos5-video${self:provider.stage}
-    VIDEOS_CREATED_AT_INDEX: CreatedAtIndex
     USER_ID_INDEX: UserIdIndex
     # TODO_ID_INDEX: TodoIdIndex
     ATTACHMENT_S3_BUCKET: serverless-c4-todo-images8-${self:provider.stage}
@@ -98,10 +96,6 @@ custom:
       - name: UpdateTodoRequestModel
         contentType: application/json
         schema: ${file(models/update-todo-model.json)}
-      - name: CreateVideoRequestModel
-        contentType: application/json
-        schema: ${file(models/videos/create-video-request.json)}
-      
   serverless-offline:
     port: 3003
 
@@ -231,58 +225,6 @@ functions:
           - dynamodb:DeleteItem
         Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODOS_TABLE}
 
-  GetVideos:
-    handler: src/lambda/http/videos/getVideos.handler
-    events:
-      - http:
-          method: get
-          path: videos
-          cors: true
-          authorizer: Auth
-    iamRoleStatements:
-      - Effect: Allow
-        Action:
-          - dynamodb:Scan
-          - dynamodb:PutItem
-          - dynamodb:GetItem
-          - dynamodb:Query
-        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.VIDEOS_TABLE}
-      - Effect: Allow
-        Action:
-          - dynamodb:Query
-        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.VIDEOS_TABLE}/index/${self:provider.environment.VIDEOS_CREATED_AT_INDEX}
-
-  CreateVideo:
-    handler: src/lambda/http/videos/createVideo.handler
-    events:
-      - http:
-          method: post
-          path: videos
-          cors: true
-          authorizer: Auth
-          reqValidatorName: RequestBodyValidator
-          documentation:
-            summary: Create a new video
-            description: create a new video
-            requestModels:
-              'application/json': CreateVideoRequestModel
-
-  DeleteVideo:
-    handler: src/lambda/http/videos/deleteVideo.handler
-    events:
-      - http:
-          method: delete
-          path: videos/{videoId}
-          cors: true
-          authorizer: Auth
-    iamRoleStatements:
-      - Effect: Allow
-        Action:
-          - dynamodb:GetItem
-          - dynamodb:DeleteItem
-        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.VIDEOS_TABLE}
-
-
   # # TODO: Configure this function
   # # Provide property for setting up CORS, Authorizer, iamRoleStatements
   GenerateUploadUrl:
@@ -311,50 +253,6 @@ functions:
         Action: 
           - kms:Decrypt
         Resource: !GetAtt KMSKey.Arn
-
-  GenerateUploadUrlVideo:
-    handler: src/lambda/http/generateUploadUrl.handler
-    events:
-      - http:
-          method: post
-          path: videos/{videoId}/attachment
-          cors: true
-          authorizer: Auth
-    iamRoleStatements:
-      - Effect: Allow
-        Action:
-          - dynamodb:PutItem
-        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.VIDEOS_TABLE}
-      - Effect: Allow
-        Action:
-        - s3:PutObject
-        - s3:GetObject
-        Resource: !GetAtt AttachmentsBucket.Arn
-      - Effect: Allow
-        Action:
-          - secretsmanager:GetSecretValue
-        Resource: !Ref Auth0Secret
-      - Effect: Allow
-        Action: 
-          - kms:Decrypt
-        Resource: !GetAtt KMSKey.Arn
-
-  SysnWithElasticSearch:
-    environment:
-      ES_ENDPOINT: !GetAtt TodosSearch.DomainEndpoint
-    handler: src/lambda/dynamoDb/elasticSearchSync.handler
-    events:
-      - stream:
-          type: dynamodb
-          arn: !GetAtt TodosTable.StreamArn
-    iamRoleStatements:
-      - Effect: Allow
-        Action: 
-          - dynamodb:*
-        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODOS_TABLE}
-      - Effect: "Allow"
-        Action: "es:*"
-        Resource: "*"
 
 resources:
   Resources:
@@ -436,38 +334,6 @@ resources:
                 KeyType: RANGE
             Projection:
               ProjectionType: ALL # What attributes will be copied to an index
-        StreamSpecification: 
-          StreamViewType: NEW_IMAGE
-
-    VideosTable:
-      Type: AWS::DynamoDB::Table
-      Properties:
-        AttributeDefinitions:
-          - AttributeName: userId
-            AttributeType: S
-          - AttributeName: videoId
-            AttributeType: S
-          - AttributeName: createdAt
-            AttributeType: S
-        KeySchema:
-          - AttributeName: userId
-            KeyType: HASH
-          - AttributeName: videoId
-            KeyType: RANGE
-        BillingMode: PAY_PER_REQUEST
-        TableName: ${self:provider.environment.VIDEOS_TABLE}
-        LocalSecondaryIndexes:
-          - IndexName: ${self:provider.environment.VIDEOS_CREATED_AT_INDEX}
-            KeySchema:
-              - AttributeName: userId
-                KeyType: HASH
-              - AttributeName: createdAt
-                KeyType: RANGE
-            Projection:
-              ProjectionType: ALL # What attributes will be copied to an index
-        # StreamSpecification: 
-        #   StreamViewType: NEW_IMAGE
-
 
     # TODO: Complete the bucket properties below. - DONE
     # Do not forget to add the CorsConfiguration propoerty
@@ -539,58 +405,6 @@ resources:
         Name: ${self:provider.environment.SECRET_NAME}
         Description: Auth0 secret
         KmsKeyId: !Ref KMSKey
-
-    TodosSearch:
-      Type: AWS::Elasticsearch::Domain
-      Properties:
-        ElasticsearchVersion: '6.8'
-        DomainName: todos-search-${self:provider.stage}
-        ElasticsearchClusterConfig:
-          DedicatedMasterEnabled: false
-          InstanceCount: '1'
-          ZoneAwarenessEnabled: false
-          InstanceType: t2.small.elasticsearch
-        EBSOptions:
-          EBSEnabled: true
-          Iops: 0
-          VolumeSize: 10
-          VolumeType: 'gp2'
-        AccessPolicies:
-          Version: "2012-10-17"
-          Statement:
-            -
-              Effect: "Allow"
-              Principal:
-                AWS: "*"
-              Action: "es:*"
-              Resource: "*"
-              Condition:
-                IpAddress:
-                  aws:sourceIp:
-                    - "171.251.16.196" # https://checkip.amazonaws.com/
-                    
-        # AccessPolicies:
-        #   Version: '2012-10-17'
-        #   Statement:
-        #     -
-        #       Effect: Allow
-        #       Principal:
-        #         AWS: '*'
-        #       Action: 'es:*'
-        #       Resource: '*'
-        # AccessPolicies:
-        #   Version: '2012-10-17'
-        #   Statement:
-        #     - Effect: Allow
-        #       Principal:
-        #         AWS: '*'
-        #       Action: 'es:ESHttp*'
-        #       # Resource: !Sub "arn:aws:es:${self:provider.region}:${AWS:AccountId}:domain/todos-search-${self:provider.stage}/*"
-        #       Resource: !Sub "arn:aws:es:us-east-1:665688197191:domain/todos-search-dev2"
-        #       Condition:
-        #         IpAddress:
-        #            aws:SourceIp: ["12.13.14.15"] 
-        
 
 # OLD
 # // "aws-xray-sdk": "^2.2.0",

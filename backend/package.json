@@ -14,7 +14,9 @@
     "serverless-offline": "^8.8.0",
     "source-map-support": "^0.5.11",
     "uuid": "^3.3.2",
-    "winston": "^3.2.1"
+    "winston": "^3.2.1",
+    "elasticsearch": "^15.4.1",
+    "http-aws-es": "^6.0.0"
   },
   "devDependencies": {
     "@types/aws-lambda": "^8.10.17",
