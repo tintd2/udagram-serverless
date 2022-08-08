@@ -100,7 +100,7 @@ custom:
         schema: ${file(models/update-todo-model.json)}
       - name: CreateVideoRequestModel
         contentType: application/json
-        schema: ${file(models/videos/create-video-request.json)}
+        schema: ${file(models/videos/create-video-model.json)}
       
   serverless-offline:
     port: 3003
@@ -266,6 +266,13 @@ functions:
             description: create a new video
             requestModels:
               'application/json': CreateVideoRequestModel
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - dynamodb:Query
+          - dynamodb:GetItem
+          - dynamodb:PutItem
+        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.VIDEOS_TABLE}
 
   DeleteVideo:
     handler: src/lambda/http/videos/deleteVideo.handler
